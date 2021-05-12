@@ -9,6 +9,7 @@ llvm-ir = { version = "0.7.4", features = ["llvm-11"] }
 llvm-ir-analysis = { version = "0.2.1", features = ["llvm-11"] }
 rustc-demangle = "0.1"
 colored = "2.0.0"
+anyhow = "1.0.40"
 
 [profile.release]
 debug = true

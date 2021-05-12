@@ -1,9 +1,53 @@
-use std::{fs::ReadDir, path::Path};
+mod context;
+mod function;
+
+use self::context::Context;
+use std::{collections::HashMap, fs::ReadDir, path::Path};
 
 use colored::Colorize;
 use llvm_ir::Module;
+use llvm_ir_analysis::CrossModuleAnalysis;
+use rustc_demangle::demangle;
 
-pub fn run(directory: ReadDir) -> Result<(), Box<dyn std::error::Error>> {
+pub fn run(directory: ReadDir, entry_point: String) -> anyhow::Result<()> {
+    let modules = read_modules(directory)?;
+    let analysis = CrossModuleAnalysis::new(&modules);
+
+    let mut mangle_map: HashMap<String, &str> = HashMap::new();
+
+    for function in analysis.functions() {
+        let demangled = format!("{:#}", demangle(&function.name));
+        mangle_map.insert(demangled, &function.name);
+    }
+
+    let entry_point = if let Some(name) = mangle_map.get(&entry_point) {
+        println!("{}", "Demangled and found Function:".green().bold());
+        println!(
+            "    {} => {}",
+            entry_point.white().bold(),
+            name.white().bold()
+        );
+
+        name
+    } else {
+        println!(
+            "{}: {}",
+            "Could not map given function".yellow().bold(),
+            entry_point
+        );
+        entry_point.as_str()
+    };
+    println!();
+
+    let mut context = Context::new(analysis);
+    let stats = context.analyze_function_by_name(entry_point).unwrap();
+
+    println!("{:#?}", stats);
+
+    Ok(())
+}
+
+fn read_modules(directory: ReadDir) -> anyhow::Result<Vec<Module>> {
     let mut modules = Vec::new();
 
     for entry in directory.flatten() {
@@ -11,8 +55,8 @@ pub fn run(directory: ReadDir) -> Result<(), Box<dyn std::error::Error>> {
             let path = entry.path();
             println!(
                 "    {} {} {}",
-                "Adding Module".bright_green().bold(),
-                pretty_path(&path),
+                "Adding Module".green().bold(),
+                pretty_crate(&path),
                 &path.display().to_string().dimmed(),
             );
 
@@ -22,8 +66,9 @@ pub fn run(directory: ReadDir) -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
+    println!();
 
-    Ok(())
+    Ok(modules)
 }
 
 fn is_bitcode(path: &Path) -> bool {
@@ -32,7 +77,7 @@ fn is_bitcode(path: &Path) -> bool {
         .unwrap_or_default()
 }
 
-fn pretty_path(path: &Path) -> String {
+fn pretty_crate(path: &Path) -> String {
     let nice = path.file_name().unwrap().to_string_lossy().to_string();
     let name = nice.split('-').next().unwrap().to_string();
 

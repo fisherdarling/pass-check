@@ -6,4 +6,4 @@ A tool for collecting optimization statistics.
 
 To run it on the project's bitcode:
 
-`RUSTFLAGS='--emit llvm-bc' cargo run --release -- target/debug/deps`
+`RUSTFLAGS='--emit llvm-bc' cargo run --release -- target/release/deps pass_check::run`
