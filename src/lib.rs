@@ -1,16 +1,12 @@
-use std::{fs::DirEntry, path::Path};
+use std::{fs::ReadDir, path::Path};
 
 use colored::Colorize;
 use llvm_ir::Module;
-use llvm_ir_analysis::{CrossModuleAnalysis, ModuleAnalysis};
-use rustc_demangle::demangle;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let target_path = std::env::args().nth(1).unwrap();
-
+pub fn run(directory: ReadDir) -> Result<(), Box<dyn std::error::Error>> {
     let mut modules = Vec::new();
 
-    for entry in std::fs::read_dir(target_path)?.flatten() {
+    for entry in directory.flatten() {
         if entry.file_type()?.is_file() && is_bitcode(&entry.path()) {
             let path = entry.path();
             println!(
