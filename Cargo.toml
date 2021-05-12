@@ -1,0 +1,14 @@
+[package]
+name = "pass-check"
+version = "0.1.0"
+authors = ["Fisher Darling <fdarlingco@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+llvm-ir = { version = "0.7.4", features = ["llvm-11"] }
+llvm-ir-analysis = { version = "0.2.1", features = ["llvm-11"] }
+rustc-demangle = "0.1"
+colored = "2.0.0"
+
+[profile.release]
+debug = true
