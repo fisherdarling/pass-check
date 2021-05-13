@@ -1,2 +1,3 @@
 /target
 examples/*.bc
+examples/const_folding.rs
