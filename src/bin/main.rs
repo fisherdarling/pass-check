@@ -35,8 +35,8 @@ enum Subcommand {
     Analyze(Analyze),
     /// Search for demangled functions, module names, etc.
     Search(Search),
-    /// Compare two different analysis outputs
-    Compare(Compare),
+    // /// Compare two different analysis outputs
+    // Compare(Compare),
 }
 
 #[derive(Clap)]
@@ -101,7 +101,21 @@ fn main() -> anyhow::Result<()> {
                     println!("{}", string);
                 }
             }
-            Analyze::Module { module_name } => {}
+            Analyze::Module { module_name } => {
+                let stats = pass_check.analyze_module(&module_name, &mut context)?;
+
+                let string = if opts.json {
+                    serde_json::to_string_pretty(&stats)?
+                } else {
+                    format!("{:#?}", stats)
+                };
+
+                if let Some(path) = opts.output {
+                    std::fs::write(path, &string)?;
+                } else {
+                    println!("{}", string);
+                }
+            }
             Analyze::Everything => {
                 let everything = pass_check.analyze_everything(&mut context)?;
 
@@ -147,7 +161,7 @@ fn main() -> anyhow::Result<()> {
                 }
             }
         },
-        Subcommand::Compare(_) => {}
+        // Subcommand::Compare(_) => {}
     }
 
     Ok(())

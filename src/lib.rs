@@ -29,11 +29,6 @@ impl PassCheck {
         Self { modules }
     }
 
-    // pub fn new(path: &Path) -> anyhow::Result<Self> {
-
-    //     Ok(PassCheck { modules })
-    // }
-
     pub fn modules(&self) -> &[Module] {
         &self.modules
     }
@@ -111,6 +106,31 @@ impl PassCheck {
         Ok(EverythingStats {
             modules: module_stats,
         })
+    }
+
+    pub fn analyze_module<'m>(
+        &self,
+        module_name: &str,
+        context: &'m mut Context<'m>,
+    ) -> anyhow::Result<ModuleStats> {
+        let module = context
+            .module_by_pretty_name(&module_name)
+            .ok_or_else(|| anyhow!("Unable to find module: {}", module_name))?;
+
+        let mut stats = ModuleStats::default();
+        stats.name = module.name.clone();
+
+        let mut func_stats = HashMap::new();
+
+        for func in &module.functions {
+            let func_stat = context.analyze_function(&func);
+            func_stats.insert(func_stat.name.clone(), func_stat);
+        }
+
+        stats.functions = func_stats.values().into_iter().cloned().collect();
+        stats.functions.sort();
+
+        Ok(stats)
     }
 }
 

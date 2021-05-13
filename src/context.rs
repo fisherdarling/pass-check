@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
 use llvm_ir::{Function, Module};
 use llvm_ir_analysis::CrossModuleAnalysis;
@@ -35,6 +35,19 @@ impl<'m> Context<'m> {
             .get(func_name)
             .map(|name| self.analysis.get_func_by_name(name))
             .flatten()
+    }
+
+    pub fn module_by_pretty_name(&self, module_name: &str) -> Option<&Module> {
+        self.analysis.modules().find(|m| {
+            let nice = PathBuf::from(&m.name)
+                .file_name()
+                .unwrap()
+                .to_string_lossy()
+                .to_string();
+            let name = nice.split('-').next().unwrap().to_string();
+
+            name == module_name
+        })
     }
 }
 
