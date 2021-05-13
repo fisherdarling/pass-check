@@ -1,10 +1,12 @@
-mod context;
+pub mod context;
 mod function;
 
 use self::context::Context;
 use std::{collections::HashMap, fs::ReadDir, path::Path};
 
+use anyhow::anyhow;
 use colored::Colorize;
+use function::FunctionStats;
 use llvm_ir::Module;
 use llvm_ir_analysis::CrossModuleAnalysis;
 use regex::Regex;
@@ -36,14 +38,10 @@ impl PassCheck {
         format!("{:#}", demangle(path))
     }
 
-    pub fn search_for_func(
-        &self,
-        regex: &Regex,
-        analysis: &CrossModuleAnalysis<'_>,
-    ) -> Vec<String> {
+    pub fn search_for_func(&self, regex: &Regex, context: &Context<'_>) -> Vec<String> {
         let mut matches = Vec::new();
 
-        for function in analysis.functions() {
+        for function in context.analysis.functions() {
             let demangled = format!("{:#}", demangle(&function.name));
             if regex.is_match(&demangled) {
                 matches.push(demangled);
@@ -53,20 +51,28 @@ impl PassCheck {
         matches
     }
 
-    pub fn search_for_module(
-        &self,
-        regex: &Regex,
-        analysis: &CrossModuleAnalysis<'_>,
-    ) -> Vec<String> {
+    pub fn search_for_module(&self, regex: &Regex, context: &Context<'_>) -> Vec<String> {
         let mut matches = Vec::new();
 
-        for module in analysis.modules() {
+        for module in context.analysis.modules() {
             if regex.is_match(&module.name) {
                 matches.push(module.name.to_string());
             }
         }
 
         matches
+    }
+
+    pub fn analyze_function<'m>(
+        &self,
+        func_name: &'m str,
+        context: &'m mut Context<'m>,
+    ) -> anyhow::Result<FunctionStats> {
+        context.generate_mangle_map();
+
+        context
+            .analyze_function_by_name(func_name)
+            .ok_or_else(|| anyhow!("Unable to analyze function: {}", func_name))
     }
 }
 
