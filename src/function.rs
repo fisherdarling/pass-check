@@ -1,12 +1,13 @@
-use std::collections::{HashSet, VecDeque};
-
 use llvm_ir::{Function, Instruction, Name};
 use llvm_ir_analysis::{CFGNode, ControlFlowGraph, FunctionAnalysis};
+use serde::{Deserialize, Serialize};
+use std::collections::{HashSet, VecDeque};
 
-#[derive(Debug, Default, Copy, Clone)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FunctionStats {
-    instruction: InstructionStats,
-    cfg: CFGStats,
+    pub(crate) name: String,
+    pub(crate) instrs: InstructionStats,
+    pub(crate) cfg: CFGStats,
 }
 
 pub fn compute_function_stats(func: &Function) -> FunctionStats {
@@ -16,18 +17,22 @@ pub fn compute_function_stats(func: &Function) -> FunctionStats {
     let dep_stats = compute_cfg_stats(&analysis.control_flow_graph());
 
     FunctionStats {
-        instruction: instr_stats,
+        name: func.name.clone(),
+        instrs: instr_stats,
         cfg: dep_stats,
     }
 }
 
-#[derive(Debug, Default, Copy, Clone)]
+#[derive(
+    Debug, Default, Copy, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
 pub struct InstructionStats {
     loads: usize,
     stores: usize,
     allocas: usize,
     calls: usize,
     atomic_ops: usize,
+    instrs: usize,
 }
 
 fn compute_instruction_stats(func: &Function) -> InstructionStats {
@@ -44,13 +49,17 @@ fn compute_instruction_stats(func: &Function) -> InstructionStats {
                 Instruction::CmpXchg(_) => stats.atomic_ops += 1,
                 _ => {}
             }
+            stats.instrs += 1;
         }
+        stats.instrs += 1;
     }
 
     stats
 }
 
-#[derive(Debug, Default, Copy, Clone)]
+#[derive(
+    Debug, Default, Copy, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
 pub struct CFGStats {
     blocks: usize,
     depth: usize,

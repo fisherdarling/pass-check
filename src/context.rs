@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use llvm_ir::{Function, Module};
-use llvm_ir_analysis::{CrossModuleAnalysis, FunctionAnalysis};
+use llvm_ir_analysis::CrossModuleAnalysis;
 use rustc_demangle::demangle;
 
 use crate::function::{compute_function_stats, FunctionStats};
@@ -39,28 +39,26 @@ impl<'m> Context<'m> {
 }
 
 impl<'m> Context<'m> {
-    pub fn analyze_function_by_name(&mut self, func_name: &'m str) -> Option<FunctionStats> {
-        if let Some(stats) = self.function_cache.get(func_name) {
-            Some(stats.clone())
-        } else {
-            let (function, _module) = self.get_func_by_name(func_name)?;
-            let stats = compute_function_stats(function);
+    pub fn analyze_function_by_name(&self, func_name: &'m str) -> Option<FunctionStats> {
+        let (function, _module) = self.get_func_by_name(func_name)?;
+        let mut stats = compute_function_stats(function);
+        stats.name = func_name.to_owned();
 
-            self.function_cache.insert(func_name, stats.clone());
-
-            Some(stats)
-        }
+        Some(stats)
     }
 
-    pub fn analyze_function(&mut self, func: &'m Function) -> Option<FunctionStats> {
-        if let Some(stats) = self.function_cache.get(func.name.as_str()) {
-            Some(stats.clone())
-        } else {
-            let stats = compute_function_stats(func);
-            self.function_cache
-                .insert(func.name.as_str(), stats.clone());
+    pub fn analyze_function(&self, func: &'m Function) -> FunctionStats {
+        let mut stats = compute_function_stats(func);
+        stats.name = format!("{:#}", demangle(&func.name));
 
-            Some(stats)
-        }
+        // if let Some(demangled) =
+        //     self.mangle_map
+        //         .iter()
+        //         .find_map(|(k, v)| if *v == func.name { Some(k) } else { None })
+        // {
+        //     stats.name = demangled.to_owned();
+        // }
+
+        stats
     }
 }
