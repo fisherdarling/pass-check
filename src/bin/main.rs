@@ -2,7 +2,7 @@ use std::{borrow::Borrow, path::PathBuf};
 
 use clap::{AppSettings, Clap};
 use colored::Colorize;
-use pass_check::PassCheck;
+use pass_check::{context::Context, PassCheck};
 use regex::Regex;
 
 #[derive(Clap)]
@@ -81,9 +81,19 @@ fn main() -> anyhow::Result<()> {
 
     let pass_check = PassCheck::new(modules);
     let analysis = pass_check.analysis();
+    let mut context = Context::new(analysis);
+    context.generate_mangle_map();
 
     match opts.command {
-        Subcommand::Analyze(_) => {}
+        Subcommand::Analyze(a) => match a {
+            Analyze::Func { func_name } => {
+                let stats = pass_check.analyze_function(&func_name, &mut context)?;
+
+                println!("{:#?}", stats);
+            }
+            Analyze::Module { module_name } => {}
+            Analyze::Folder => {}
+        },
         Subcommand::Search(s) => match s {
             Search::Demangle { path } => {
                 let demangled = pass_check.demangle(&path);
@@ -91,10 +101,10 @@ fn main() -> anyhow::Result<()> {
                 println!("{}", demangled);
             }
             Search::Func { regex } => {
-                let results = pass_check.search_for_func(&regex, &analysis);
+                let results = pass_check.search_for_func(&regex, &mut context);
 
                 if results.is_empty() {
-                    println!("{}", "No functions found.".red().bold());
+                    eprintln!("{}", "No functions found.".red().bold());
                 } else {
                     for result in results {
                         println!("{}", result);
@@ -102,10 +112,10 @@ fn main() -> anyhow::Result<()> {
                 }
             }
             Search::Module { regex } => {
-                let results = pass_check.search_for_module(&regex, &analysis);
+                let results = pass_check.search_for_module(&regex, &context);
 
                 if results.is_empty() {
-                    println!("{}", "No modules found.".red().bold());
+                    eprintln!("{}", "No modules found.".red().bold());
                 } else {
                     for result in results {
                         println!("{}", result);
