@@ -10,6 +10,8 @@ llvm-ir-analysis = { version = "0.2.1", features = ["llvm-11"] }
 rustc-demangle = "0.1"
 colored = "2.0.0"
 anyhow = "1.0.40"
+regex = "*"
+clap = { version = "3.0.0-beta.2", features = ["regex", "wrap_help"] }
 
 [profile.release]
 debug = true
