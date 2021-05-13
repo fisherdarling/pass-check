@@ -8,7 +8,7 @@ use regex::Regex;
 #[derive(Clap)]
 #[clap(
     version = "0.1",
-    author = "Fisher D. <fdarling@mines.ed>, Jake V. <jvossen@mines.edu>"
+    author = "Fisher D. <fdarling@mines.edu>, Jake V. <jvossen@mines.edu>"
 )]
 #[clap(setting = AppSettings::ColoredHelp)]
 struct Opts {
@@ -16,7 +16,7 @@ struct Opts {
     /// Generally under `target/<profile>/deps`
     #[clap(short, long, parse(from_os_str))]
     target_dir: PathBuf,
-    /// Output json (used for comparisions).
+    /// Output json (used for comparisons).
     #[clap(short, long)]
     json: bool,
     /// Output to a file.
