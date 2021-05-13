@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, path::PathBuf};
+use std::path::PathBuf;
 
 use clap::{AppSettings, Clap};
 use colored::Colorize;
@@ -35,8 +35,8 @@ enum Subcommand {
     Analyze(Analyze),
     /// Search for demangled functions, module names, etc.
     Search(Search),
-    /// Compare two different analysis outputs
-    Compare(Compare),
+    // /// Compare two different analysis outputs
+    // Compare(Compare),
 }
 
 #[derive(Clap)]
@@ -46,7 +46,7 @@ enum Analyze {
     /// Analyze every function in a module. Expects the full module name. See `search` to find modules.
     Module { module_name: String },
     /// Analyze every module and function in the target folder
-    Folder,
+    Everything,
 }
 
 #[derive(Clap)]
@@ -89,10 +89,48 @@ fn main() -> anyhow::Result<()> {
             Analyze::Func { func_name } => {
                 let stats = pass_check.analyze_function(&func_name, &mut context)?;
 
-                println!("{:#?}", stats);
+                let string = if opts.json {
+                    serde_json::to_string_pretty(&stats)?
+                } else {
+                    format!("{:#?}", stats)
+                };
+
+                if let Some(path) = opts.output {
+                    std::fs::write(path, &string)?;
+                } else {
+                    println!("{}", string);
+                }
             }
-            Analyze::Module { module_name } => {}
-            Analyze::Folder => {}
+            Analyze::Module { module_name } => {
+                let stats = pass_check.analyze_module(&module_name, &mut context)?;
+
+                let string = if opts.json {
+                    serde_json::to_string_pretty(&stats)?
+                } else {
+                    format!("{:#?}", stats)
+                };
+
+                if let Some(path) = opts.output {
+                    std::fs::write(path, &string)?;
+                } else {
+                    println!("{}", string);
+                }
+            }
+            Analyze::Everything => {
+                let everything = pass_check.analyze_everything(&mut context)?;
+
+                let string = if opts.json {
+                    serde_json::to_string_pretty(&everything)?
+                } else {
+                    format!("{:#?}", everything)
+                };
+
+                if let Some(path) = opts.output {
+                    std::fs::write(path, &string)?;
+                } else {
+                    println!("{}", string);
+                }
+            }
         },
         Subcommand::Search(s) => match s {
             Search::Demangle { path } => {
@@ -123,7 +161,7 @@ fn main() -> anyhow::Result<()> {
                 }
             }
         },
-        Subcommand::Compare(_) => {}
+        // Subcommand::Compare(_) => {}
     }
 
     Ok(())

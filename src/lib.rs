@@ -1,14 +1,22 @@
 pub mod context;
 mod function;
+pub mod overall;
+
+use crate::overall::ModuleStats;
 
 use self::context::Context;
-use std::{collections::HashMap, fs::ReadDir, path::Path};
+use std::{
+    collections::{HashMap, HashSet},
+    fs::ReadDir,
+    path::Path,
+};
 
 use anyhow::anyhow;
 use colored::Colorize;
 use function::FunctionStats;
 use llvm_ir::Module;
 use llvm_ir_analysis::CrossModuleAnalysis;
+use overall::EverythingStats;
 use regex::Regex;
 use rustc_demangle::demangle;
 
@@ -20,11 +28,6 @@ impl PassCheck {
     pub fn new(modules: Vec<Module>) -> Self {
         Self { modules }
     }
-
-    // pub fn new(path: &Path) -> anyhow::Result<Self> {
-
-    //     Ok(PassCheck { modules })
-    // }
 
     pub fn modules(&self) -> &[Module] {
         &self.modules
@@ -74,45 +77,62 @@ impl PassCheck {
             .analyze_function_by_name(func_name)
             .ok_or_else(|| anyhow!("Unable to analyze function: {}", func_name))
     }
+
+    pub fn analyze_everything<'m>(
+        &self,
+        context: &'m mut Context<'m>,
+    ) -> anyhow::Result<EverythingStats> {
+        let mut module_stats = Vec::new();
+
+        for module in context.analysis.modules() {
+            let mut stats = ModuleStats::default();
+            stats.name = module.name.clone();
+
+            let mut func_stats = HashSet::new();
+
+            for func in &module.functions {
+                let func_stat = context.analyze_function(&func);
+                func_stats.insert(func_stat);
+            }
+
+            stats.functions = func_stats.into_iter().collect();
+            stats.functions.sort();
+
+            module_stats.push(stats);
+        }
+
+        module_stats.sort();
+
+        Ok(EverythingStats {
+            modules: module_stats,
+        })
+    }
+
+    pub fn analyze_module<'m>(
+        &self,
+        module_name: &str,
+        context: &'m mut Context<'m>,
+    ) -> anyhow::Result<ModuleStats> {
+        let module = context
+            .module_by_pretty_name(&module_name)
+            .ok_or_else(|| anyhow!("Unable to find module: {}", module_name))?;
+
+        let mut stats = ModuleStats::default();
+        stats.name = module.name.clone();
+
+        let mut func_stats = HashMap::new();
+
+        for func in &module.functions {
+            let func_stat = context.analyze_function(&func);
+            func_stats.insert(func_stat.name.clone(), func_stat);
+        }
+
+        stats.functions = func_stats.values().into_iter().cloned().collect();
+        stats.functions.sort();
+
+        Ok(stats)
+    }
 }
-
-// pub fn run(directory: ReadDir, entry_point: String) -> anyhow::Result<()> {
-//     let modules = read_modules(directory)?;
-//     let analysis = CrossModuleAnalysis::new(&modules);
-
-//     let mut mangle_map: HashMap<String, &str> = HashMap::new();
-
-//     for function in analysis.functions() {
-//         let demangled = format!("{:#}", demangle(&function.name));
-//         mangle_map.insert(demangled, &function.name);
-//     }
-
-//     let entry_point = if let Some(name) = mangle_map.get(&entry_point) {
-//         println!("{}", "Demangled and found Function:".green().bold());
-//         println!(
-//             "    {} => {}",
-//             entry_point.white().bold(),
-//             name.white().bold()
-//         );
-
-//         name
-//     } else {
-//         println!(
-//             "{}: {}",
-//             "Could not map given function".yellow().bold(),
-//             entry_point
-//         );
-//         entry_point.as_str()
-//     };
-//     println!();
-
-//     let mut context = Context::new(analysis);
-//     let stats = context.analyze_function_by_name(entry_point).unwrap();
-
-//     println!("{:#?}", stats);
-
-//     Ok(())
-// }
 
 pub fn read_modules(directory: ReadDir, silent: bool) -> anyhow::Result<Vec<Module>> {
     let mut modules = Vec::new();
