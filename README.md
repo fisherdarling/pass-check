@@ -20,7 +20,7 @@ Simply run `make` from the root of the project to build `pass-check` and analyze
 
 ### Showing examples
 
-Each folder inside of `examples/` contains the `opt` and `no_opt` directories (for when compiler optimizations where enabled, and not enabled respectivly).
+Each folder inside of `examples/` contains the `opt` and `no_opt` directories (for when compiler optimizations where enabled, and not enabled respectively).
 
 Inside of each of those folders, there should be an `analysis.json` that describes the instructions in the main function of that example.
 
@@ -146,7 +146,7 @@ The `-s|--silent` flag can be used to not print the `Adding Module ...` lines.
 
 ## Analyze the project itself:
 
-Running this command will give you information about the LLVM bitcode generated from the analizer.
+Running this command will give you information about the LLVM bitcode generated from the analyzer.
 
 ```bash
 RUSTFLAGS='--emit llvm-bc' cargo run --release -- -o pass_check_analysis.json -j -t target/release/deps analyze module pass_check
