@@ -11,3 +11,13 @@ examples/const_folding/const_folding.bc
 examples/const_folding/opt/const_folding.O.bc
 examples/loops/opt/loops.O.bc
 examples/sum/opt/sum.O.bc
+examples/const_folding/no_opt/const_folding.O.bc
+examples/sum/no_opt/sum.bc
+examples/loops/no_opt/loops.bc
+examples/const_folding/no_opt/const_folding.bc
+examples/const_folding/no_opt/analysis.json
+examples/const_folding/opt/analysis.json
+examples/loops/no_opt/analysis.json
+examples/loops/opt/analysis.json
+examples/sum/no_opt/analysis.json
+examples/sum/opt/analysis.json
