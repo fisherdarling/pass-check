@@ -1,3 +1,10 @@
 /target
 examples/*.bc
 examples/const_folding.rs
+pass-check
+examples/sum/sum.O.bc
+examples/sum/sum.bc
+examples/loops/loops.O.bc
+examples/loops/loops.bc
+examples/const_folding/const_folding.O.bc
+examples/const_folding/const_folding.bc
