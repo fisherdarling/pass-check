@@ -8,3 +8,6 @@ examples/loops/loops.O.bc
 examples/loops/loops.bc
 examples/const_folding/const_folding.O.bc
 examples/const_folding/const_folding.bc
+examples/const_folding/opt/const_folding.O.bc
+examples/loops/opt/loops.O.bc
+examples/sum/opt/sum.O.bc
